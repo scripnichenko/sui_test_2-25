@@ -99,3 +99,52 @@ Your project is complete when:
 - ✅ Frontend builds without errors
 - ✅ App is successfully deployed to GitHub Pages
 - ✅ All features work as expected
+
+## Extra feature
+
+### 🏆 Auction System
+
+I've implemented a comprehensive **Auction System** as an extra feature to complement the existing fixed-price marketplace. This feature allows users to create time-limited auctions for their Hero NFTs where other users can place competitive bids.
+
+#### Key Features:
+
+1. **Auction Creation**
+   - Users can create auctions for their Hero NFTs
+   - Set a starting price and auction duration
+   - Automatic end time calculation
+
+2. **Bidding Mechanism**
+   - Users can place bids on active auctions
+   - Bid validation ensures higher bids than current highest
+   - Minimum bid must be at least the starting price
+   - Real-time bid tracking and updates
+
+3. **Auction Management**
+   - Automatic auction ending when time expires
+   - Winner determination based on highest bid
+   - NFT transfer to winning bidder
+   - Return to seller if no bids placed
+
+4. **Admin Controls**
+   - Admin can cancel auctions if needed
+   - Emergency auction termination capability
+
+5. **Event System**
+   - `AuctionCreated` - When a new auction is created
+   - `BidPlaced` - When someone places a bid
+   - `AuctionEnded` - When an auction concludes
+
+6. **Getter Functions**
+   - Access auction details like current bid, bidder, end time
+   - Check if auction has bids
+   - Get seller and starting price information
+
+#### Technical Implementation:
+
+- **Structs**: `Auction`, `Bid` for data management
+- **Events**: Comprehensive event emission for frontend integration
+- **Error Handling**: Custom error codes for different failure scenarios
+- **Time Management**: Epoch timestamp-based auction duration
+- **Security**: Proper validation and access controls
+
+This auction system enhances the marketplace by providing an alternative trading mechanism that can potentially achieve higher prices through competitive bidding, making the Hero NFT marketplace more dynamic and engaging for users.
