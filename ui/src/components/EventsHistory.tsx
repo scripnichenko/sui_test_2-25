@@ -1,5 +1,5 @@
 import { useSuiClientQueries } from "@mysten/dapp-kit";
-import { Flex, Heading, Text, Card, Badge, Grid } from "@radix-ui/themes";
+import { Badge, Card, Flex, Grid, Heading, Text } from "@radix-ui/themes";
 import { useNetworkVariable } from "../networkConfig";
 
 export default function EventsHistory() {
@@ -55,6 +55,42 @@ export default function EventsHistory() {
         queryKey: ["queryEvents", packageId, "ArenaCompleted"],
         enabled: !!packageId,
       },
+      {
+        method: "queryEvents",
+        params: {
+          query: {
+            MoveEventType: `${packageId}::marketplace::AuctionCreated`,
+          },
+          limit: 20,
+          order: "descending",
+        },
+        queryKey: ["queryEvents", packageId, "AuctionCreated"],
+        enabled: !!packageId,
+      },
+      {
+        method: "queryEvents",
+        params: {
+          query: {
+            MoveEventType: `${packageId}::marketplace::BidPlaced`,
+          },
+          limit: 20,
+          order: "descending",
+        },
+        queryKey: ["queryEvents", packageId, "BidPlaced"],
+        enabled: !!packageId,
+      },
+      {
+        method: "queryEvents",
+        params: {
+          query: {
+            MoveEventType: `${packageId}::marketplace::AuctionEnded`,
+          },
+          limit: 20,
+          order: "descending",
+        },
+        queryKey: ["queryEvents", packageId, "AuctionEnded"],
+        enabled: !!packageId,
+      },
     ],
   });
 
@@ -63,6 +99,9 @@ export default function EventsHistory() {
     { data: boughtEvents, isPending: isBoughtPending },
     { data: battleCreatedEvents, isPending: isBattleCreatedPending },
     { data: battleCompletedEvents, isPending: isBattleCompletedPending },
+    { data: auctionCreatedEvents, isPending: isAuctionCreatedPending },
+    { data: bidPlacedEvents, isPending: isBidPlacedPending },
+    { data: auctionEndedEvents, isPending: isAuctionEndedPending },
   ] = eventQueries;
 
   const formatTimestamp = (timestamp: string) => {
@@ -81,7 +120,10 @@ export default function EventsHistory() {
     isListedPending ||
     isBoughtPending ||
     isBattleCreatedPending ||
-    isBattleCompletedPending
+    isBattleCompletedPending ||
+    isAuctionCreatedPending ||
+    isBidPlacedPending ||
+    isAuctionEndedPending
   ) {
     return (
       <Card>
@@ -106,6 +148,18 @@ export default function EventsHistory() {
     ...(battleCompletedEvents?.data || []).map((event) => ({
       ...event,
       type: "battle_completed" as const,
+    })),
+    ...(auctionCreatedEvents?.data || []).map((event) => ({
+      ...event,
+      type: "auction_created" as const,
+    })),
+    ...(bidPlacedEvents?.data || []).map((event) => ({
+      ...event,
+      type: "bid_placed" as const,
+    })),
+    ...(auctionEndedEvents?.data || []).map((event) => ({
+      ...event,
+      type: "auction_ended" as const,
     })),
   ].sort((a, b) => Number(b.timestampMs) - Number(a.timestampMs));
 
@@ -137,7 +191,13 @@ export default function EventsHistory() {
                             ? "green"
                             : event.type === "battle_created"
                               ? "orange"
-                              : "red"
+                              : event.type === "battle_completed"
+                                ? "red"
+                                : event.type === "auction_created"
+                                  ? "purple"
+                                  : event.type === "bid_placed"
+                                    ? "yellow"
+                                    : "indigo"
                       }
                       size="2"
                     >
@@ -147,7 +207,13 @@ export default function EventsHistory() {
                           ? "Hero Bought"
                           : event.type === "battle_created"
                             ? "Arena Created"
-                            : "Battle Completed"}
+                            : event.type === "battle_completed"
+                              ? "Battle Completed"
+                              : event.type === "auction_created"
+                                ? "Auction Created"
+                                : event.type === "bid_placed"
+                                  ? "Bid Placed"
+                                  : "Auction Ended"}
                     </Badge>
                     <Text size="3" color="gray">
                       {formatTimestamp(event.timestampMs!)}
@@ -185,7 +251,7 @@ export default function EventsHistory() {
                           color="gray"
                           style={{ fontFamily: "monospace" }}
                         >
-                          ID: {eventData.id.slice(0, 8)}...
+                          ID: {eventData.id?.slice(0, 8) || 'N/A'}...
                         </Text>
                       </>
                     )}
@@ -200,7 +266,7 @@ export default function EventsHistory() {
                           color="gray"
                           style={{ fontFamily: "monospace" }}
                         >
-                          ID: {eventData.id.slice(0, 8)}...
+                          ID: {eventData.id?.slice(0, 8) || 'N/A'}...
                         </Text>
                       </>
                     )}
@@ -209,11 +275,77 @@ export default function EventsHistory() {
                       <>
                         <Text size="3">
                           <strong>🏆 Winner:</strong> ...
-                          {eventData.winner.slice(-8)}
+                          {eventData.winner?.slice(-8) || 'N/A'}
                         </Text>
                         <Text size="3">
                           <strong>💀 Loser:</strong> ...
-                          {eventData.loser.slice(-8)}
+                          {eventData.loser?.slice(-8) || 'N/A'}
+                        </Text>
+                      </>
+                    )}
+
+                    {event.type === "auction_created" && (
+                      <>
+                        <Text size="3">
+                          <strong>Starting Price:</strong> {formatPrice(eventData.starting_price)} SUI
+                        </Text>
+                        <Text size="3">
+                          <strong>Seller:</strong> {formatAddress(eventData.seller)}
+                        </Text>
+                        <Text size="3">
+                          <strong>End Time:</strong> {formatTimestamp(eventData.end_time)}
+                        </Text>
+                        <Text
+                          size="3"
+                          color="gray"
+                          style={{ fontFamily: "monospace" }}
+                        >
+                          Auction ID: {eventData.auction_id?.slice(0, 8) || 'N/A'}...
+                        </Text>
+                      </>
+                    )}
+
+                    {event.type === "bid_placed" && (
+                      <>
+                        <Text size="3">
+                          <strong>Bid Amount:</strong> {formatPrice(eventData.amount)} SUI
+                        </Text>
+                        <Text size="3">
+                          <strong>Bidder:</strong> {formatAddress(eventData.bidder)}
+                        </Text>
+                        <Text
+                          size="3"
+                          color="gray"
+                          style={{ fontFamily: "monospace" }}
+                        >
+                          Auction ID: {eventData.auction_id?.slice(0, 8) || 'N/A'}...
+                        </Text>
+                      </>
+                    )}
+
+                    {event.type === "auction_ended" && (
+                      <>
+                        <Text size="3">
+                          <strong>Final Price:</strong> {formatPrice(eventData.final_price)} SUI
+                        </Text>
+                        {eventData.winner && eventData.winner !== '0x0000000000000000000000000000000000000000000000000000000000000000' ? (
+                          <Text size="3">
+                            <strong>Winner:</strong> {formatAddress(eventData.winner)}
+                          </Text>
+                        ) : (
+                          <Text size="3">
+                            <strong>Result:</strong> No bids placed
+                          </Text>
+                        )}
+                        <Text size="3">
+                          <strong>Seller:</strong> {formatAddress(eventData.seller)}
+                        </Text>
+                        <Text
+                          size="3"
+                          color="gray"
+                          style={{ fontFamily: "monospace" }}
+                        >
+                          Auction ID: {eventData.auction_id?.slice(0, 8) || 'N/A'}...
                         </Text>
                       </>
                     )}
